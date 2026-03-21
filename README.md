@@ -2,3 +2,4 @@
 Task Management System BSIT 3R5
 
 Francis Niño Cahoy
+Arnado, Rex Z.

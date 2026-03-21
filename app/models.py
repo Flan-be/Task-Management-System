@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-
+from django.utils import timezone
 
 # Create your models here.
 
@@ -20,3 +20,14 @@ class Task(models.Model):
     timeDue = models.DateTimeField()
     overdue = models.BooleanField(default=False)
     taskDescription = models.TextField(blank=True, null=True)
+    completed = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if self.timeDue and self.timeDue < timezone.now():
+            self.overdue = True
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.taskName
+
+    

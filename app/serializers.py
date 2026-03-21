@@ -6,7 +6,7 @@ from .models import Project, Task
 class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
-        fields = ['id', 'taskName', 'taskDescription', 'priorityLevel', 'project', 'timeDue', 'overdue']
+        fields = ['id', 'taskName', 'taskDescription', 'priorityLevel', 'project', 'timeDue', 'overdue', 'completed']
 
 class ProjectSerializer(serializers.ModelSerializer):
     tasks = TaskSerializer(many=True, read_only=True)

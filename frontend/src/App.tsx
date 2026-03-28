@@ -245,6 +245,13 @@ const App: React.FC = () => {
                             <CardContent sx={{ '&:last-child': { pb: 2 } }}>
                               <Box display="flex" justifyContent="space-between" alignItems="start" gap={2}>
                                 <Box flex={1}>
+                                  <Typography variant="caption" sx={{ 
+                                    bgcolor: '#6366f1', color: 'white',
+                                    px: 1.5, py: 0.25, borderRadius: 1, 
+                                    fontWeight: 600, display: 'inline-block', mb: 1
+                                  }}>
+                                  {projects.find(p => p.id === task.project)?.projectName ?? 'Unknown Project'}
+                                  </Typography>
                                   <Typography variant="h6" sx={{ fontWeight: 700, color: '#1f2937' }}>
                                     {task.taskName}
                                   </Typography>

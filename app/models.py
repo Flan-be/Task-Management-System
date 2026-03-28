@@ -17,7 +17,7 @@ class Task(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
-    timeDue = models.DateTimeField()
+    timeDue = models.DateTimeField(null=True, blank=True)
     overdue = models.BooleanField(default=False)
     taskDescription = models.TextField(blank=True, null=True)
     completed = models.BooleanField(default=False)

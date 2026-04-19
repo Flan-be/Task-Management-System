@@ -1,8 +1,19 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
+from django.contrib.auth import get_user_model
 
 # Create your models here.
+
+User = get_user_model()
+
+class User(models.Model):
+    email = models.EmailField(unique=True)
+    name = models.CharField(max_length=255)
+    password = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.email
 
 class Project(models.Model):
     projectName = models.CharField(max_length=255)
@@ -29,5 +40,6 @@ class Task(models.Model):
 
     def __str__(self):
         return self.taskName
+
 
     

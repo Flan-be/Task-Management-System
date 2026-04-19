@@ -13,7 +13,7 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import WarningIcon from '@mui/icons-material/Warning';
 import API from "./API.tsx";
 
-function Dashboard(): JSX.Element {
+function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
   const [userName, setUserName] = useState<string>("");
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -106,7 +106,11 @@ function Dashboard(): JSX.Element {
               Task Manager
             </Typography>
             {userName && (
-            <Typography variant="body2" sx={{ opacity: 0.85, mr: 2 }}>
+            <Typography
+              variant="body2"
+              sx={{ opacity: 0.85, mr: 2, cursor: 'pointer', '&:hover': { opacity: 1, textDecoration: 'underline' } }}
+              onClick={onProfile}
+              >
               {userName}
             </Typography>
             )}
@@ -372,5 +376,5 @@ export default function App(): JSX.Element {
 
   if (screen === "login") return <LoginPage onLogin={handleLogin} />;
   if (screen === "profile") return <ProfilePage onComplete={handleProfileComplete} />;
-  return <Dashboard />;
+  return <Dashboard onProfile={() => setScreen("profile")} />;
 }

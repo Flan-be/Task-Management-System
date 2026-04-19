@@ -80,6 +80,7 @@ DJOSER = {
     'SERIALIZERS': {
         'user': 'Kahoy.serializers.UserSerializer',
         'user_create': 'Kahoy.serializers.UserCreateSerializer',
+        'current_user': 'Kahoy.serializers.CurrentUserSerializer',
     }
 }
 

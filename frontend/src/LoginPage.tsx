@@ -2,7 +2,7 @@ import { useState, FormEvent, CSSProperties } from "react";
 import API from "./API.tsx";
 
 interface LoginPageProps {
-  onLogin: () => void;
+  onLogin: (email: string) => void;
 }
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
@@ -20,7 +20,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       const { data } = await API.post("auth/jwt/create/", { email, password });
       localStorage.setItem("access", data.access);
       localStorage.setItem("refresh", data.refresh);
-      onLogin();
+      onLogin(email);
     } catch (err: any) {
       const message = err.response?.data?.detail;
       setError(message || "Invalid credentials. Please try again.");

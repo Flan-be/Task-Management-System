@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Project, Task } from './types';
 import LoginPage from "./LoginPage.tsx";
+import ProfilePage from "./ProfilePage.tsx";
 import { getProject, createProject, updateProject, deleteProject } from './APIProject.tsx';
 import { getTask, createTask, updateTask, deleteTask, getAllOverdueTasks } from './APITask.tsx';
 import ProjectList from './components/ProjectList.tsx';
@@ -10,8 +11,10 @@ import { theme } from './theme.ts';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import WarningIcon from '@mui/icons-material/Warning';
+import API from "./API.tsx";
 
 function Dashboard(): JSX.Element {
+  const [userName, setUserName] = useState<string>("");
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -27,8 +30,14 @@ function Dashboard(): JSX.Element {
   const [showOverdue, setShowOverdue] = useState(false);
   const [allTasks, setAllTasks] = useState<Task[]>([]);
 
+  useEffect(() => {
+    API.get("auth/users/me/")
+      .then(res => setUserName(res.data.name || ""))
+      .catch(() => {});
+  }, []);
   useEffect(() => { fetchProjects(); }, []);
   useEffect(() => { if (selectedProject) fetchTasks(selectedProject.id); }, [selectedProject]);
+  
 
   const fetchProjects = async () => setProjects(await getProject());
   const fetchTasks = async (projectId: number) => setTasks(await getTask(projectId));
@@ -37,6 +46,8 @@ function Dashboard(): JSX.Element {
   const handleLogout = (): void => {
     localStorage.removeItem("access");
     localStorage.removeItem("refresh");
+    localStorage.removeItem("profile");
+    localStorage.removeItem("email");
     window.location.reload();
   };
 
@@ -83,6 +94,8 @@ function Dashboard(): JSX.Element {
     if (selectedProject) fetchTasks(selectedProject.id);
   };
 
+  const profile = JSON.parse(localStorage.getItem("profile") || "{}");
+
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#f9fafb' }}>
@@ -92,6 +105,11 @@ function Dashboard(): JSX.Element {
             <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.5px', flex: 1 }}>
               Task Manager
             </Typography>
+            {userName && (
+            <Typography variant="body2" sx={{ opacity: 0.85, mr: 2 }}>
+              {userName}
+            </Typography>
+            )}
             <Button color="inherit" onClick={handleLogout} sx={{ opacity: 0.9 }}>
               Logout
             </Button>
@@ -287,14 +305,72 @@ function Dashboard(): JSX.Element {
   );
 }
 
-export default function App(): JSX.Element {
-  const [authed, setAuthed] = useState<boolean>(
-    !!localStorage.getItem("access")
-  );
+// ─── Auth flow: login → profile → dashboard 
 
-  if (!authed) {
-    return <LoginPage onLogin={() => setAuthed(true)} />;
+type Screen = "login" | "profile" | "dashboard";
+
+export default function App(): JSX.Element {
+  const [screen, setScreen] = useState<Screen>("login");
+  const [checking, setChecking] = useState<boolean>(true);
+
+  useEffect(() => {
+    const verifyToken = async () => {
+      const token = localStorage.getItem("access");
+      if (!token) {
+        setScreen("login");
+        setChecking(false);
+        return;
+      }
+      try {
+        await API.get("auth/users/me/");
+        setScreen("dashboard");
+      } catch {
+        localStorage.removeItem("access");
+        localStorage.removeItem("refresh");
+        localStorage.removeItem("email");
+        setScreen("login");
+      } finally {
+        setChecking(false); // ← this was missing, causing infinite spinner
+      }
+    };
+
+    verifyToken();
+  }, []);
+
+  const handleLogin = (email: string) => {
+    localStorage.setItem("email", email);
+    setScreen("profile");
+  };
+
+  const handleProfileComplete = () => {
+    setScreen("dashboard");
+  };
+
+  if (checking) {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#f9fafb",
+        flexDirection: "column",
+        gap: "12px",
+      }}>
+        <div style={{
+          width: "28px",
+          height: "28px",
+          border: "3px solid #e5e7eb",
+          borderTop: "3px solid #6366f1",
+          borderRadius: "50%",
+          animation: "spin 0.7s linear infinite",
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
   }
 
+  if (screen === "login") return <LoginPage onLogin={handleLogin} />;
+  if (screen === "profile") return <ProfilePage onComplete={handleProfileComplete} />;
   return <Dashboard />;
 }

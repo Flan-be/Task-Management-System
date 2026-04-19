@@ -1,9 +1,5 @@
-import axios from "axios";
-import {Task} from "./types";
-
-const API = axios.create({
-    baseURL: "http://127.0.0.1:8000/api/",
-});
+import API from "./API.tsx";
+import { Task } from "./types";
 
 export const getTask = async (projectId: number): Promise<Task[]> => {
     const response = await API.get<Task[]>(`tasks/?project=${projectId}`);
@@ -13,12 +9,9 @@ export const getTask = async (projectId: number): Promise<Task[]> => {
 export const createTask = async (task: Omit<Task, 'id'>): Promise<Task> => {
     const response = await API.post<Task>("tasks/", task);
     return response.data;
-}   
+}
 
-export const updateTask = async (
-    id: number,
-    data: Partial<Task>
-): Promise<Task> => {
+export const updateTask = async (id: number, data: Partial<Task>): Promise<Task> => {
     const response = await API.put<Task>(`tasks/${id}/`, data);
     return response.data;
 }

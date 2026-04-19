@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'app',
     'corsheaders',
     'djoser',
-    'Kahoy.serializers',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -104,6 +103,9 @@ WSGI_APPLICATION = 'Kahoy.wsgi.application'
 
 AUTH_USER_MODEL = 'Kahoy.User'
 
+SIMPLE_JWT = {
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases

@@ -1,9 +1,5 @@
-import axios from "axios";
-import {Project} from "./types";
-
-const API = axios.create({
-    baseURL: "http://127.0.0.1:8000/api/",
-});
+import API from "./API.tsx";
+import { Project } from "./types";
 
 export const getProject = async (): Promise<Project[]> => {
     const response = await API.get<Project[]>("projects/");

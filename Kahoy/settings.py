@@ -16,6 +16,10 @@ from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Cloudinary configuration
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 
 # Quick-start development settings - unsuitable for production
@@ -36,10 +40,11 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'django_filters',
     'rest_framework',
-    'Kahoy',
+    'Kahoy.apps.KahoyConfig',
     'app',
     'corsheaders',
     'djoser',
+    'cloudinary',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -85,6 +90,9 @@ DJOSER = {
 }
 
 
+
+
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -102,7 +110,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Kahoy.wsgi.application'
 
-AUTH_USER_MODEL = 'Kahoy.User'
+AUTH_USER_MODEL = 'kahoy_app.User'
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
@@ -154,3 +162,5 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Project, Task
+from .models import Project, Task
 from django.contrib.auth import get_user_model
 # Register your models here.
 

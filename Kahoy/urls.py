@@ -16,10 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from app.views import UpdateProfileImageView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('app.urls')),
     path('api/auth/', include('djoser.urls')),
     path('api/auth/', include('djoser.urls.jwt')),
+    path('api/auth/profile/image/', UpdateProfileImageView.as_view()),
 ]

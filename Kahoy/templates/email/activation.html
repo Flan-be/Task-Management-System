@@ -1,0 +1,67 @@
+{% block subject %}Activate your TaskFlow account{% endblock subject %}
+
+{% block html_body %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0; padding:0; background:#f5f0eb; font-family:'Helvetica Neue', Arial, sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table width="560" cellpadding="0" cellspacing="0" style="border-radius:16px; overflow:hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+
+          <!-- BANNER -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #3d2e20 0%, #6b4c30 100%); padding: 40px 48px;">
+              <h1 style="margin:0 0 8px; font-size:28px; font-weight:700; color:#ffffff;">
+                TaskFlow
+              </h1>
+              <p style="margin:0; font-size:15px; color:rgba(245,237,226,0.75);">
+                Activate your account
+              </p>
+            </td>
+          </tr>
+
+          <!-- BODY -->
+          <tr>
+            <td style="background:#fffefb; padding: 40px 48px;">
+              <p style="margin:0 0 16px; font-size:15px; color:#4b3d2e; line-height:1.6;">
+                Hello <strong>{{ user.email }}</strong>,
+              </p>
+              <p style="margin:0 0 28px; font-size:15px; color:#6b5a4a; line-height:1.6;">
+                Click the button below to activate your TaskFlow account.
+              </p>
+              <table cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="border-radius:10px; background:#3d2e20;">
+                    <a href="http://localhost:3000/activate/{{ uid }}/{{ token }}"
+                       style="display:inline-block; padding:14px 32px; font-size:15px; font-weight:600; color:#f5ede2; text-decoration:none;">
+                      Activate Account →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="background:#f5f0eb; padding: 24px 48px; border-top: 1px solid #e2d8ce;">
+              <p style="margin:0; font-size:12px; color:#9c8c7c;">
+                If you didn't create a TaskFlow account, ignore this email.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
+{% endblock html_body %}

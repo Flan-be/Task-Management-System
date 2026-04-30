@@ -25,3 +25,4 @@ urlpatterns = [
     path('api/auth/', include('djoser.urls.jwt')),
     path('api/auth/profile/image/', UpdateProfileImageView.as_view()),
 ]
+

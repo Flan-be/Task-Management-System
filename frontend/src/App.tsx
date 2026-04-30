@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Project, Task } from './types';
 import LoginPage from "./LoginPage.tsx";
 import ProfilePage from "./ProfilePage.tsx";
+import RegisterPage from "./RegisterPage.tsx";
 import { getProject, createProject, updateProject, deleteProject } from './APIProject.tsx';
 import { getTask, createTask, updateTask, deleteTask, getAllOverdueTasks } from './APITask.tsx';
 import ProjectList from './components/ProjectList.tsx';
@@ -12,6 +13,7 @@ import ChecklistIcon from '@mui/icons-material/Checklist';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import WarningIcon from '@mui/icons-material/Warning';
 import API from "./API.tsx";
+
 
 function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
   const [userName, setUserName] = useState<string>("");
@@ -311,20 +313,37 @@ function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
 
 // ─── Auth flow: login → profile → dashboard 
 
-type Screen = "login" | "profile" | "dashboard";
+type Screen = "login" | "register" | "activate" | "profile" | "dashboard";
 
 export default function App(): JSX.Element {
   const [screen, setScreen] = useState<Screen>("login");
   const [checking, setChecking] = useState<boolean>(true);
 
   useEffect(() => {
-    const verifyToken = async () => {
-      const token = localStorage.getItem("access");
-      if (!token) {
-        setScreen("login");
-        setChecking(false);
+    const path = window.location.pathname;
+    if (path.startsWith("/activate/")) {
+      const parts = path.split("/");
+      const uid = parts[2];
+      const token = parts[3];
+      if (uid && token) {
+        API.post("auth/users/activation/", { uid, token })
+          .then(() => {
+            window.history.replaceState({}, "", "/");
+            setScreen("login");
+          })
+          .catch(() => {
+            window.history.replaceState({}, "", "/");
+            setScreen("login");
+          })
+          .finally(() => setChecking(false));
         return;
       }
+    }
+
+    // Normal token check
+    const verifyToken = async () => {
+      const token = localStorage.getItem("access");
+      if (!token) { setScreen("login"); setChecking(false); return; }
       try {
         await API.get("auth/users/me/");
         setScreen("dashboard");
@@ -334,10 +353,9 @@ export default function App(): JSX.Element {
         localStorage.removeItem("email");
         setScreen("login");
       } finally {
-        setChecking(false); // ← this was missing, causing infinite spinner
+        setChecking(false);
       }
     };
-
     verifyToken();
   }, []);
 
@@ -346,35 +364,18 @@ export default function App(): JSX.Element {
     setScreen("profile");
   };
 
-  const handleProfileComplete = () => {
-    setScreen("dashboard");
-  };
-
-  if (checking) {
-    return (
-      <div style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#f9fafb",
-        flexDirection: "column",
-        gap: "12px",
-      }}>
-        <div style={{
-          width: "28px",
-          height: "28px",
-          border: "3px solid #e5e7eb",
-          borderTop: "3px solid #6366f1",
-          borderRadius: "50%",
-          animation: "spin 0.7s linear infinite",
-        }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
-
-  if (screen === "login") return <LoginPage onLogin={handleLogin} />;
-  if (screen === "profile") return <ProfilePage onComplete={handleProfileComplete} />;
+  if (checking) return <Spinner />;
+  if (screen === "login") return <LoginPage onLogin={handleLogin} onRegister={() => setScreen("register")} />;
+  if (screen === "register") return <RegisterPage onBackToLogin={() => setScreen("login")} />;
+  if (screen === "profile") return <ProfilePage onComplete={() => setScreen("dashboard")} />;
   return <Dashboard onProfile={() => setScreen("profile")} />;
+}
+
+function Spinner() {
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f9fafb" }}>
+      <div style={{ width: "28px", height: "28px", border: "3px solid #e5e7eb", borderTop: "3px solid #6366f1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 }

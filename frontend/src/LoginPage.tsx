@@ -3,9 +3,10 @@ import API from "./API.tsx";
 
 interface LoginPageProps {
   onLogin: (email: string) => void;
+  onRegister: () => void;
 }
 
-export default function LoginPage({ onLogin }: LoginPageProps) {
+export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -113,7 +114,9 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
         <p style={styles.footer}>
           Don't have an account?{" "}
-          <a href="/register" style={styles.link}>Create one</a>
+          <span onClick={onRegister} style={styles.link}>
+            Create one
+          </span>
         </p>
       </div>
 

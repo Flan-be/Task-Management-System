@@ -38,3 +38,14 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+    
+class TaskAssignment(models.Model):
+    task = models.ForeignKey('app.Task', on_delete=models.CASCADE, related_name='assignments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assigned_tasks')
+    assigned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('task', 'user')
+
+    def __str__(self):
+        return f"{self.user.name} → {self.task.taskName}"

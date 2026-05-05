@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from app.views import UpdateProfileImageView
+from .views import MemberListView, TaskAssignmentListView, TaskAssignmentDetailView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -24,5 +25,8 @@ urlpatterns = [
     path('api/auth/', include('djoser.urls')),
     path('api/auth/', include('djoser.urls.jwt')),
     path('api/auth/profile/image/', UpdateProfileImageView.as_view()),
+    path('members/', MemberListView.as_view()),
+    path('tasks/<int:task_id>/assignments/', TaskAssignmentListView.as_view()),
+    path('tasks/<int:task_id>/assignments/<int:pk>/', TaskAssignmentDetailView.as_view()),
 ]
 

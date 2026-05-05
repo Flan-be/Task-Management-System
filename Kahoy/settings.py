@@ -36,7 +36,11 @@ SECRET_KEY = 'django-insecure-wd#z!=9764@x)+u^ks001kh*_k%+-nwaek)b3iu9s%#n#tw$e^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '10.0.2.2',
+]
 
 
 # Application definition
@@ -75,11 +79,17 @@ ROOT_URLCONF = 'Kahoy.urls'
 
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
-    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication'],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }
 
 SIMPLE_JWT = {
-    'ACCESS_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_TYPES': ('JWT', 'Bearer'),  
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
@@ -132,9 +142,6 @@ WSGI_APPLICATION = 'Kahoy.wsgi.application'
 
 AUTH_USER_MODEL = 'kahoy_app.User'
 
-SIMPLE_JWT = {
-    'AUTH_HEADER_TYPES': ('Bearer',),
-}
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases

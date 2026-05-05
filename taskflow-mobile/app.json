@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "taskflow-mobile",
+    "slug": "taskflow-mobile",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.yourname.taskflow"
+    }
+  }
+}

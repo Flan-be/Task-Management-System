@@ -7,12 +7,14 @@ import { getProject, createProject, updateProject, deleteProject } from './APIPr
 import { getTask, createTask, updateTask, deleteTask, getAllOverdueTasks } from './APITask.tsx';
 import ProjectList from './components/ProjectList.tsx';
 import TaskList from './components/TaskList.tsx';
-import { Box, Typography, TextField, Button, List, ListItem, ThemeProvider, Card, CardContent, AppBar, Toolbar } from '@mui/material';
+import { Box, Typography, TextField, Button, List, ListItem, ThemeProvider, Card, CardContent, AppBar, Toolbar, FormControl, Select, InputLabel, MenuItem } from '@mui/material';
 import { theme } from './theme.ts';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import WarningIcon from '@mui/icons-material/Warning';
 import API from "./API.tsx";
+import MemberPanel from './MemberPanel.tsx';
+
 
 
 function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
@@ -31,6 +33,8 @@ function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
   const [newTaskTimeDue, setNewTaskTimeDue] = useState("");
   const [showOverdue, setShowOverdue] = useState(false);
   const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [newTaskAssignee, setNewTaskAssignee] = useState<number | ''>('');
+  const [projectMembers, setProjectMembers] = useState<{id: number, name: string}[]>([]);
 
   useEffect(() => {
     API.get("auth/users/me/")
@@ -39,7 +43,13 @@ function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
   }, []);
   useEffect(() => { fetchProjects(); }, []);
   useEffect(() => { if (selectedProject) fetchTasks(selectedProject.id); }, [selectedProject]);
-  
+  useEffect(() => {
+  if (selectedProject) {
+    API.get(`projects/${selectedProject.id}/members/`)
+      .then(res => setProjectMembers(res.data))
+      .catch(() => {});
+  }
+}, [selectedProject]);
 
   const fetchProjects = async () => setProjects(await getProject());
   const fetchTasks = async (projectId: number) => setTasks(await getTask(projectId));
@@ -71,19 +81,30 @@ function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
   };
 
   const handleSubmitAddTask = async () => {
-    if (!selectedProject) return;
-    await createTask({
-      taskName: newTaskName,
-      priorityLevel: newTaskPriorityLevel,
-      taskDescription: newTaskDescription,
-      timeDue: new Date(newTaskTimeDue).toISOString(),
-      overdue: false,
-      completed: false,
-      project: selectedProject.id,
+  if (!selectedProject) return;
+  const newTask = await createTask({
+    taskName: newTaskName,
+    priorityLevel: newTaskPriorityLevel,
+    taskDescription: newTaskDescription,
+    timeDue: new Date(newTaskTimeDue).toISOString(),
+    overdue: false,
+    completed: false,
+    project: selectedProject.id,
+  });
+
+  if (newTaskAssignee !== '') {
+    await API.post(`projects/${selectedProject.id}/assign-task/`, {
+      task: newTask.id,
+      user: newTaskAssignee,
     });
-    setShowAddTaskForm(false);
-    setNewTaskName(""); setNewTaskPriorityLevel(1); setNewTaskDescription(""); setNewTaskTimeDue("");
-    fetchTasks(selectedProject.id);
+  }
+
+  setShowAddTaskForm(false);
+  setNewTaskName(''); setNewTaskPriorityLevel(1);
+  setNewTaskDescription(''); setNewTaskTimeDue('');
+  setNewTaskAssignee('');
+  fetchTasks(selectedProject.id);
+
   };
 
   const handleToggleTask = async (task: Task) => {
@@ -271,6 +292,22 @@ function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
                             <TextField size="small" type="datetime-local" label="Due Date" value={newTaskTimeDue} onChange={(e) => setNewTaskTimeDue(e.target.value)} InputLabelProps={{ shrink: true }} />
                           </Box>
                           <TextField fullWidth size="small" label="Description" value={newTaskDescription} onChange={(e) => setNewTaskDescription(e.target.value)} multiline rows={2} />
+                          {projectMembers.length > 0 && (
+                            <FormControl fullWidth size="small">
+                              <InputLabel>Assign to Member (optional)</InputLabel>
+                            <Select
+                            value={newTaskAssignee}
+                            label="Assign to Member (optional)"
+                            onChange={e => setNewTaskAssignee(e.target.value as number)}
+                            >
+                            <MenuItem value=''>None</MenuItem>
+                            {projectMembers.map(m => (
+                            <MenuItem key={m.id} value={m.id}>{m.name}</MenuItem>
+                            ))}
+                          </Select>
+                          </FormControl>
+                          )}
+                          
                           <Box display="flex" gap={1}>
                             <Button variant="contained" size="small" onClick={handleSubmitAddTask} fullWidth>Create Task</Button>
                             <Button variant="outlined" size="small" onClick={() => setShowAddTaskForm(false)} fullWidth>Cancel</Button>
@@ -289,7 +326,13 @@ function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
                       projectId={selectedProject.id}
                     />
                   </Box>
-                </Box>
+                  <Box mt={4}>
+                    <MemberPanel
+                      projectId={selectedProject.id}
+                      tasks={tasks}
+                    />
+                  </Box>
+                  </Box>
               ) : (
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
                   <Card sx={{ p: 4, textAlign: 'center', maxWidth: 400, bgcolor: '#f0f9ff', border: '2px dashed #0284c7' }}>

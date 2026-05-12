@@ -29,3 +29,16 @@ export const completeTask = async (id: number): Promise<Task> => {
     const response = await API.patch<Task>(`tasks/${id}/`, { completed: true });
     return response.data;
 }
+
+export const assignMember = async (projectId: number, taskId: number, userId: number) => {
+    await API.post(`projects/${projectId}/assign-task/`, { task: taskId, user: userId });
+};
+
+export const unassignMember = async (projectId: number, taskId: number, userId: number) => {
+    await API.delete(`projects/${projectId}/assign-task/`, { data: { task: taskId, user: userId } });
+};
+
+export const getTaskAssignees = async (taskId: number) => {
+    const res = await API.get(`assignments/?task=${taskId}`);
+    return res.data;
+};

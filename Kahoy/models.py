@@ -49,3 +49,15 @@ class TaskAssignment(models.Model):
 
     def __str__(self):
         return f"{self.user.name} → {self.task.taskName}"
+    
+
+class ProjectMember(models.Model):
+    project = models.ForeignKey('app.Project', on_delete=models.CASCADE, related_name='members')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='project_memberships')
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('project', 'user')
+
+    def __str__(self):
+        return f"{self.user.name} → {self.project.projectName}"

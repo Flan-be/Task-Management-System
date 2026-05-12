@@ -1,11 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Task } from "../types";
-import { Box, Typography, Button, TextField, List, ListItem, Checkbox, FormControlLabel, Select, MenuItem, FormControl, InputLabel, Card, CardContent } from "@mui/material";
-import { completeTask } from '../APITask.tsx';
+import {
+    Box, Typography, Button, TextField, List, ListItem,
+    Checkbox, FormControlLabel, Select, MenuItem, FormControl,
+    InputLabel, Card, CardContent, Chip, Avatar
+} from "@mui/material";
+import { completeTask, assignMember, unassignMember, getTaskAssignees } from '../APITask.tsx';
+import API from '../API.tsx';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ScheduleIcon from '@mui/icons-material/Schedule';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+
+type Member = {
+    id: number;
+    name: string;
+    email: string;
+    assigned_tasks: { task_id: number }[];
+};
+
+type Assignee = {
+    id: number;
+    user: number;
+    task_name: string;
+};
 
 interface TaskListProps {
     tasks: Task[];
@@ -15,7 +34,7 @@ interface TaskListProps {
     projectId: number;
 }
 
-const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd }) => {
+const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd, projectId }) => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
     const [showEditForm, setShowEditForm] = useState<number | null>(null);
     const [editedTaskName, setEditedTaskName] = useState("");
@@ -26,6 +45,48 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd })
     const [error, setError] = useState("");
     const [filter, setFilter] = useState<string>("all");
 
+    // Member assignment state
+    const [members, setMembers] = useState<Member[]>([]);
+    const [taskAssignees, setTaskAssignees] = useState<Record<number, Assignee[]>>({});
+    const [editAssignee, setEditAssignee] = useState<number | ''>('');
+
+    useEffect(() => {
+        // Fetch project members
+        API.get(`projects/${projectId}/members/`)
+            .then(res => setMembers(res.data))
+            .catch(() => {});
+    }, [projectId]);
+
+    useEffect(() => {
+        // Fetch assignees for all tasks
+        tasks.forEach(task => {
+            getTaskAssignees(task.id).then(data => {
+                setTaskAssignees(prev => ({ ...prev, [task.id]: data }));
+            }).catch(() => {});
+        });
+    }, [tasks]);
+
+    const handleAssign = async (taskId: number, userId: number) => {
+        await assignMember(projectId, taskId, userId);
+        const data = await getTaskAssignees(taskId);
+        setTaskAssignees(prev => ({ ...prev, [taskId]: data }));
+    };
+
+    const handleUnassign = async (taskId: number, userId: number) => {
+        await unassignMember(projectId, taskId, userId);
+        const data = await getTaskAssignees(taskId);
+        setTaskAssignees(prev => ({ ...prev, [taskId]: data }));
+    };
+
+    const getUnassignedMembers = (taskId: number) => {
+        const assignees = taskAssignees[taskId] || [];
+        const assignedIds = assignees.map(a => a.user);
+        return members.filter(m => !assignedIds.includes(m.id));
+    };
+
+    const getMemberName = (userId: number) =>
+        members.find(m => m.id === userId)?.name || 'Unknown';
+
     const getFilteredTasks = () => {
         const now = new Date();
         let filtered = [...tasks];
@@ -34,10 +95,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd })
                 filtered = filtered.filter(task => task.overdue || new Date(task.timeDue) < now);
                 break;
             case "due_today":
-                filtered = filtered.filter(task => {
-                    const due = new Date(task.timeDue);
-                    return due.toDateString() === now.toDateString();
-                });
+                filtered = filtered.filter(task => new Date(task.timeDue).toDateString() === now.toDateString());
                 break;
             case "due_this_week":
                 const weekFromNow = new Date();
@@ -52,8 +110,6 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd })
                 break;
             case "latest":
                 filtered.sort((a, b) => new Date(b.timeDue).getTime() - new Date(a.timeDue).getTime());
-                break;
-            default:
                 break;
         }
         return filtered;
@@ -87,21 +143,12 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd })
     return (
         <Box>
             <Box display="flex" alignItems="center" gap={2} mb={3}>
-                <Button 
-                    variant="contained" 
-                    size="small" 
-                    onClick={onAdd}
-                    startIcon={<CheckCircleOutlineIcon />}
-                >
+                <Button variant="contained" size="small" onClick={onAdd} startIcon={<CheckCircleOutlineIcon />}>
                     Add Task
                 </Button>
                 <FormControl size="small" sx={{ minWidth: 200 }}>
                     <InputLabel>Filter</InputLabel>
-                    <Select
-                        value={filter}
-                        label="Filter"
-                        onChange={(e) => setFilter(e.target.value)}
-                    >
+                    <Select value={filter} label="Filter" onChange={(e) => setFilter(e.target.value)}>
                         <MenuItem value="all">All Tasks</MenuItem>
                         <MenuItem value="overdue">Overdue</MenuItem>
                         <MenuItem value="due_today">Due Today</MenuItem>
@@ -116,50 +163,70 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd })
                 {getFilteredTasks().map((task) => (
                     <ListItem key={task.id} disablePadding>
                         {showEditForm === task.id ? (
-                            <Card sx={{ width: '100%', p: 0 }}>
+                            <Card sx={{ width: '100%' }}>
                                 <CardContent sx={{ '&:last-child': { pb: 2 } }}>
                                     <Typography variant="caption" sx={{ fontWeight: 600, color: '#1f2937', display: 'block', mb: 1.5 }}>
                                         Edit Task
                                     </Typography>
                                     <Box display="flex" flexDirection="column" gap={1.5}>
-                                        <TextField 
-                                            fullWidth
-                                            size="small" 
-                                            label="Task Name" 
-                                            value={editedTaskName} 
-                                            onChange={(e) => setEditedTaskName(e.target.value)}
-                                        />
+                                        <TextField fullWidth size="small" label="Task Name" value={editedTaskName} onChange={(e) => setEditedTaskName(e.target.value)} />
                                         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
-                                            <TextField 
-                                                size="small" 
-                                                type="number" 
-                                                label="Priority (1-5)" 
-                                                value={editedPriorityLevel} 
-                                                onChange={(e) => setEditedPriorityLevel(Number(e.target.value))}
-                                                inputProps={{ min: 1, max: 5 }}
-                                            />
-                                            <TextField 
-                                                size="small" 
-                                                type="datetime-local" 
-                                                value={editedTimeDue} 
-                                                onChange={(e) => setEditedTimeDue(e.target.value)}
-                                                InputLabelProps={{ shrink: true }}
-                                                label="Due Date"
-                                            />
+                                            <TextField size="small" type="number" label="Priority (1-5)" value={editedPriorityLevel} onChange={(e) => setEditedPriorityLevel(Number(e.target.value))} inputProps={{ min: 1, max: 5 }} />
+                                            <TextField size="small" type="datetime-local" value={editedTimeDue} onChange={(e) => setEditedTimeDue(e.target.value)} InputLabelProps={{ shrink: true }} label="Due Date" />
                                         </Box>
-                                        <TextField 
-                                            fullWidth
-                                            size="small" 
-                                            label="Description" 
-                                            value={editedTaskDescription} 
-                                            onChange={(e) => setEditedTaskDescription(e.target.value)}
-                                            multiline
-                                            rows={2}
-                                        />
-                                        <FormControlLabel 
-                                            control={<Checkbox checked={editedOverdue} onChange={(e) => setEditedOverdue(e.target.checked)} />} 
-                                            label="Mark as Overdue" 
-                                        />
+                                        <TextField fullWidth size="small" label="Description" value={editedTaskDescription} onChange={(e) => setEditedTaskDescription(e.target.value)} multiline rows={2} />
+                                        <FormControlLabel control={<Checkbox checked={editedOverdue} onChange={(e) => setEditedOverdue(e.target.checked)} />} label="Mark as Overdue" />
+
+                                        {/* Assign member in edit form */}
+                                        <Box>
+                                            <Typography variant="caption" fontWeight={600} color="#1f2937">
+                                                Assigned Members
+                                            </Typography>
+                                            <Box display="flex" flexWrap="wrap" gap={1} mt={0.5} mb={1}>
+                                                {(taskAssignees[task.id] || []).map(a => (
+                                                    <Chip
+                                                        key={a.id}
+                                                        label={getMemberName(a.user)}
+                                                        size="small"
+                                                        color="primary"
+                                                        onDelete={() => handleUnassign(task.id, a.user)}
+                                                    />
+                                                ))}
+                                                {(taskAssignees[task.id] || []).length === 0 && (
+                                                    <Typography variant="caption" color="text.secondary">None</Typography>
+                                                )}
+                                            </Box>
+                                            {getUnassignedMembers(task.id).length > 0 && (
+                                                <Box display="flex" gap={1}>
+                                                    <FormControl size="small" sx={{ flex: 1 }}>
+                                                        <InputLabel>Add Member</InputLabel>
+                                                        <Select
+                                                            value={editAssignee}
+                                                            label="Add Member"
+                                                            onChange={e => setEditAssignee(e.target.value as number)}
+                                                        >
+                                                            {getUnassignedMembers(task.id).map(m => (
+                                                                <MenuItem key={m.id} value={m.id}>{m.name}</MenuItem>
+                                                            ))}
+                                                        </Select>
+                                                    </FormControl>
+                                                    <Button
+                                                        size="small"
+                                                        variant="outlined"
+                                                        startIcon={<PersonAddIcon />}
+                                                        onClick={() => {
+                                                            if (editAssignee !== '') {
+                                                                handleAssign(task.id, editAssignee as number);
+                                                                setEditAssignee('');
+                                                            }
+                                                        }}
+                                                    >
+                                                        Assign
+                                                    </Button>
+                                                </Box>
+                                            )}
+                                        </Box>
+
                                         {error && <Typography color="error" variant="caption">{error}</Typography>}
                                         <Box display="flex" gap={1}>
                                             <Button size="small" variant="contained" onClick={() => handleSaveEdit(task)} fullWidth>Save</Button>
@@ -169,7 +236,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd })
                                 </CardContent>
                             </Card>
                         ) : showDeleteConfirm === task.id ? (
-                            <Card sx={{ width: '100%', p: 0, bgcolor: '#fef2f2', borderLeft: '3px solid #ef4444' }}>
+                            <Card sx={{ width: '100%', bgcolor: '#fef2f2', borderLeft: '3px solid #ef4444' }}>
                                 <CardContent sx={{ '&:last-child': { pb: 2 } }}>
                                     <Typography variant="body2" sx={{ fontWeight: 600, color: '#7f1d1d', mb: 2 }}>Delete {task.taskName}?</Typography>
                                     <Box display="flex" gap={1}>
@@ -179,9 +246,8 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd })
                                 </CardContent>
                             </Card>
                         ) : (
-                            <Card sx={{ 
+                            <Card sx={{
                                 width: '100%',
-                                p: 0,
                                 opacity: task.completed ? 0.7 : 1,
                                 bgcolor: task.completed ? '#f0fdf4' : task.overdue ? '#fef2f2' : '#ffffff',
                                 borderLeft: `4px solid ${getStatusColor(task)}`,
@@ -189,8 +255,8 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd })
                                 <CardContent sx={{ '&:last-child': { pb: 2 } }}>
                                     <Box display="flex" justifyContent="space-between" alignItems="start" gap={2} mb={1}>
                                         <Box flex={1}>
-                                            <Typography variant="h6" sx={{ 
-                                                fontWeight: 700, 
+                                            <Typography variant="h6" sx={{
+                                                fontWeight: 700,
                                                 color: '#1f2937',
                                                 textDecoration: task.completed ? 'line-through' : 'none',
                                                 textDecorationColor: '#d1d5db'
@@ -198,15 +264,10 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd })
                                                 {task.taskName}
                                             </Typography>
                                         </Box>
-                                        <Box sx={{ 
+                                        <Box sx={{
                                             bgcolor: getPriorityColor(task.priorityLevel),
-                                            color: 'white',
-                                            px: 1.5,
-                                            py: 0.25,
-                                            borderRadius: '4px',
-                                            fontSize: '0.75rem',
-                                            fontWeight: 700,
-                                            whiteSpace: 'nowrap'
+                                            color: 'white', px: 1.5, py: 0.25,
+                                            borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700,
                                         }}>
                                             P{task.priorityLevel}
                                         </Box>
@@ -216,6 +277,22 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd })
                                         {task.taskDescription}
                                     </Typography>
 
+                                    {/* Show assignees on task card */}
+                                    {(taskAssignees[task.id] || []).length > 0 && (
+                                        <Box display="flex" flexWrap="wrap" gap={0.5} mb={1.5}>
+                                            {(taskAssignees[task.id] || []).map(a => (
+                                                <Chip
+                                                    key={a.id}
+                                                    avatar={<Avatar sx={{ width: 20, height: 20, fontSize: '0.6rem' }}>{getMemberName(a.user)[0]}</Avatar>}
+                                                    label={getMemberName(a.user)}
+                                                    size="small"
+                                                    variant="outlined"
+                                                    color="primary"
+                                                />
+                                            ))}
+                                        </Box>
+                                    )}
+
                                     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                             <ScheduleIcon sx={{ fontSize: '0.875rem', color: '#6b7280' }} />
@@ -223,13 +300,9 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd })
                                                 {new Date(task.timeDue).toLocaleDateString()}
                                             </Typography>
                                         </Box>
-                                        <Typography variant="caption" sx={{ 
-                                            bgcolor: getStatusColor(task),
-                                            color: 'white',
-                                            px: 1.5,
-                                            py: 0.25,
-                                            borderRadius: 1,
-                                            fontWeight: 500
+                                        <Typography variant="caption" sx={{
+                                            bgcolor: getStatusColor(task), color: 'white',
+                                            px: 1.5, py: 0.25, borderRadius: 1, fontWeight: 500
                                         }}>
                                             {getStatusText(task)}
                                         </Typography>
@@ -237,10 +310,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd })
 
                                     <Box display="flex" gap={0.5}>
                                         {!task.completed && (
-                                            <Button
-                                                size="small"
-                                                variant="contained"
-                                                color="success"
+                                            <Button size="small" variant="contained" color="success"
                                                 startIcon={<CheckCircleOutlineIcon />}
                                                 onClick={async () => {
                                                     await completeTask(task.id);
@@ -252,10 +322,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd })
                                             </Button>
                                         )}
                                         {!task.completed && (
-                                            <Button 
-                                                size="small" 
-                                                variant="text"
-                                                startIcon={<EditIcon />}
+                                            <Button size="small" variant="text" startIcon={<EditIcon />}
                                                 onClick={() => {
                                                     setShowEditForm(task.id);
                                                     setEditedTaskName(task.taskName);
@@ -263,16 +330,14 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd })
                                                     setEditedTaskDescription(task.taskDescription || "");
                                                     setEditedTimeDue(task.timeDue);
                                                     setEditedOverdue(task.overdue);
+                                                    setEditAssignee('');
                                                 }}
                                                 sx={{ flex: 1, fontSize: '0.75rem' }}
                                             >
                                                 Edit
                                             </Button>
                                         )}
-                                        <Button 
-                                            size="small" 
-                                            variant="text"
-                                            color="error"
+                                        <Button size="small" variant="text" color="error"
                                             startIcon={<DeleteIcon />}
                                             onClick={() => setShowDeleteConfirm(task.id)}
                                             sx={{ flex: 1, fontSize: '0.75rem' }}

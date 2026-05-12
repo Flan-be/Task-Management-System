@@ -23,22 +23,39 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
-    if (form.password !== form.re_password) {
-      setError("Passwords do not match.");
-      return;
-    }
+
+    // Read values directly from the form DOM to guarantee nothing is stale
+    const target = e.currentTarget;
+    const email      = (target.elements.namedItem("email")       as HTMLInputElement).value.trim();
+    const name       = (target.elements.namedItem("name")        as HTMLInputElement).value.trim();
+    const password   = (target.elements.namedItem("password")    as HTMLInputElement).value;
+    const re_password = (target.elements.namedItem("re_password") as HTMLInputElement).value;
+
+    if (!email) { setError("Email is required."); return; }
+    if (password !== re_password) { setError("Passwords do not match."); return; }
+
+    // Keep state in sync for the success screen
+    setForm({ email, name, password, re_password });
     setLoading(true);
+
     try {
       await API.post("auth/users/", {
-        email: form.email,
-        name: form.name,
-        password: form.password,
-        re_password: form.re_password,
+        email,
+        name,
+        password,
+        re_password,
+        role: "leader",
       });
       setSuccess(true);
     } catch (err: any) {
       const data = err.response?.data;
-      const msg = data?.email?.[0] || data?.password?.[0] || data?.detail || "Registration failed.";
+      const msg =
+        data?.email?.[0] ||
+        data?.name?.[0]  ||
+        data?.password?.[0] ||
+        data?.non_field_errors?.[0] ||
+        data?.detail ||
+        "Registration failed.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -78,6 +95,15 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
             </svg>
           </div>
           <span style={styles.logoText}>TaskFlow</span>
+        </div>
+
+        {/* Leader badge */}
+        <div style={styles.roleBadge}>
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ flexShrink: 0 }}>
+            <path d="M6.5 1L8.2 4.5L12 5.1L9.25 7.8L9.9 11.6L6.5 9.8L3.1 11.6L3.75 7.8L1 5.1L4.8 4.5L6.5 1Z"
+              fill="#6366f1" stroke="#6366f1" strokeWidth="0.5" strokeLinejoin="round" />
+          </svg>
+          Leader Account
         </div>
 
         <h1 style={styles.heading}>Create an account</h1>
@@ -148,7 +174,7 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
           </div>
 
           <button type="submit" disabled={loading} style={styles.submitBtn}>
-            {loading ? <span style={styles.spinner} /> : "Create account"}
+            {loading ? <span style={styles.spinner} /> : "Create leader account"}
           </button>
         </form>
 
@@ -208,7 +234,7 @@ const styles: Record<string, CSSProperties> = {
     display: "flex",
     alignItems: "center",
     gap: "8px",
-    marginBottom: "1.75rem",
+    marginBottom: "1.25rem",
   },
   logoMark: {
     width: "34px",
@@ -224,6 +250,21 @@ const styles: Record<string, CSSProperties> = {
     fontSize: "18px",
     color: "#1f2937",
     letterSpacing: "-0.3px",
+  },
+  roleBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    background: "rgba(99,102,241,0.08)",
+    border: "1px solid rgba(99,102,241,0.2)",
+    color: "#6366f1",
+    fontSize: "12px",
+    fontWeight: "600",
+    letterSpacing: "0.04em",
+    textTransform: "uppercase" as const,
+    borderRadius: "20px",
+    padding: "4px 10px",
+    marginBottom: "1rem",
   },
   heading: {
     fontFamily: "'Lora', serif",

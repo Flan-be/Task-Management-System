@@ -1,0 +1,424 @@
+import React, { useState, useEffect } from 'react';
+import { Project, Task } from './types';
+import LoginPage from "./LoginPage.tsx";
+import ProfilePage from "./ProfilePage.tsx";
+import RegisterPage from "./RegisterPage.tsx";
+import { getProject, createProject, updateProject, deleteProject } from './APIProject.tsx';
+import { getTask, createTask, updateTask, deleteTask, getAllOverdueTasks } from './APITask.tsx';
+import ProjectList from './components/ProjectList.tsx';
+import TaskList from './components/TaskList.tsx';
+import { Box, Typography, TextField, Button, List, ListItem, ThemeProvider, Card, CardContent, AppBar, Toolbar, FormControl, Select, InputLabel, MenuItem } from '@mui/material';
+import { theme } from './theme.ts';
+import ChecklistIcon from '@mui/icons-material/Checklist';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import WarningIcon from '@mui/icons-material/Warning';
+import API from "./API.tsx";
+import MemberPanel from './MemberPanel.tsx';
+
+
+
+function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
+  const [userName, setUserName] = useState<string>("");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [showAddProjectForm, setShowAddProjectForm] = useState(false);
+  const [showAddTaskForm, setShowAddTaskForm] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [newPriorityLevel, setNewPriorityLevel] = useState(1);
+  const [newProjectDescription, setNewProjectDescription] = useState("");
+  const [newTaskName, setNewTaskName] = useState("");
+  const [newTaskPriorityLevel, setNewTaskPriorityLevel] = useState(1);
+  const [newTaskDescription, setNewTaskDescription] = useState("");
+  const [newTaskTimeDue, setNewTaskTimeDue] = useState("");
+  const [showOverdue, setShowOverdue] = useState(false);
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [newTaskAssignee, setNewTaskAssignee] = useState<number | ''>('');
+  const [projectMembers, setProjectMembers] = useState<{id: number, name: string}[]>([]);
+
+  useEffect(() => {
+    API.get("auth/users/me/")
+      .then(res => setUserName(res.data.name || ""))
+      .catch(() => {});
+  }, []);
+  useEffect(() => { fetchProjects(); }, []);
+  useEffect(() => { if (selectedProject) fetchTasks(selectedProject.id); }, [selectedProject]);
+  useEffect(() => {
+  if (selectedProject) {
+    API.get(`projects/${selectedProject.id}/members/`)
+      .then(res => setProjectMembers(res.data))
+      .catch(() => {});
+  }
+}, [selectedProject]);
+
+  const fetchProjects = async () => setProjects(await getProject());
+  const fetchTasks = async (projectId: number) => setTasks(await getTask(projectId));
+  const fetchAllOverdueTasks = async () => setAllTasks(await getAllOverdueTasks());
+
+  const handleLogout = (): void => {
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    localStorage.removeItem("profile");
+    localStorage.removeItem("email");
+    window.location.reload();
+  };
+
+  const handleSubmitAddProject = async () => {
+    await createProject({ projectName: newProjectName, priorityLevel: newPriorityLevel, projectDescription: newProjectDescription });
+    setShowAddProjectForm(false);
+    setNewProjectName(""); setNewPriorityLevel(1); setNewProjectDescription("");
+    fetchProjects();
+  };
+
+  const handleToggleProject = async (project: Project) => {
+    await updateProject(project.id, { projectName: project.projectName, priorityLevel: project.priorityLevel, projectDescription: project.projectDescription });
+    fetchProjects();
+  };
+
+  const handleDeleteProject = async (project: Project) => {
+    await deleteProject(project.id);
+    setSelectedProject(null); setTasks([]); fetchProjects();
+  };
+
+  const handleSubmitAddTask = async () => {
+  if (!selectedProject) return;
+  const newTask = await createTask({
+    taskName: newTaskName,
+    priorityLevel: newTaskPriorityLevel,
+    taskDescription: newTaskDescription,
+    timeDue: new Date(newTaskTimeDue).toISOString(),
+    overdue: false,
+    completed: false,
+    project: selectedProject.id,
+  });
+
+  if (newTaskAssignee !== '') {
+    await API.post(`projects/${selectedProject.id}/assign-task/`, {
+      task: newTask.id,
+      user: newTaskAssignee,
+    });
+  }
+
+  setShowAddTaskForm(false);
+  setNewTaskName(''); setNewTaskPriorityLevel(1);
+  setNewTaskDescription(''); setNewTaskTimeDue('');
+  setNewTaskAssignee('');
+  fetchTasks(selectedProject.id);
+
+  };
+
+  const handleToggleTask = async (task: Task) => {
+    await updateTask(task.id, { taskName: task.taskName, priorityLevel: task.priorityLevel, taskDescription: task.taskDescription, timeDue: task.timeDue, overdue: task.overdue, project: task.project });
+    if (selectedProject) fetchTasks(selectedProject.id);
+  };
+
+  const handleDeleteTask = async (task: Task) => {
+    await deleteTask(task.id);
+    if (selectedProject) fetchTasks(selectedProject.id);
+  };
+
+  const profile = JSON.parse(localStorage.getItem("profile") || "{}");
+
+  return (
+    <ThemeProvider theme={theme}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#f9fafb' }}>
+        <AppBar position="static" sx={{ background: 'linear-gradient(135deg, #6366f1 0%, #ec4899 100%)', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.15)' }}>
+          <Toolbar sx={{ py: 2 }}>
+            <ChecklistIcon sx={{ mr: 2, fontSize: 32 }} />
+            <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.5px', flex: 1 }}>
+              Task Manager
+            </Typography>
+            {userName && (
+            <Typography
+              variant="body2"
+              sx={{ opacity: 0.85, mr: 2, cursor: 'pointer', '&:hover': { opacity: 1, textDecoration: 'underline' } }}
+              onClick={onProfile}
+              >
+              {userName}
+            </Typography>
+            )}
+            <Button color="inherit" onClick={handleLogout} sx={{ opacity: 0.9 }}>
+              Logout
+            </Button>
+          </Toolbar>
+        </AppBar>
+
+        <Box display="flex" flex={1} overflow="hidden">
+          <Box sx={{ width: 280, borderRight: '1px solid #e5e7eb', bgcolor: '#ffffff', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: '#1f2937' }}>
+                Projects
+              </Typography>
+
+              <Button
+                variant={showOverdue ? "contained" : "outlined"}
+                color="error"
+                size="small"
+                fullWidth
+                startIcon={<WarningIcon />}
+                onClick={() => { setShowOverdue(!showOverdue); if (!showOverdue) fetchAllOverdueTasks(); }}
+                sx={{ mb: 2 }}
+              >
+                {showOverdue ? "Hide Overdue" : "Overdue"}
+              </Button>
+
+              <Button
+                variant="contained"
+                size="small"
+                fullWidth
+                onClick={() => setShowAddProjectForm(true)}
+                startIcon={<AddCircleOutlineIcon />}
+                sx={{ mb: 3 }}
+              >
+                New Project
+              </Button>
+
+              {showAddProjectForm && (
+                <Card sx={{ mb: 3, p: 0 }}>
+                  <CardContent sx={{ '&:last-child': { pb: 2 } }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 2, color: '#1f2937' }}>
+                      Create New Project
+                    </Typography>
+                    <Box display="flex" flexDirection="column" gap={1.5}>
+                      <TextField fullWidth size="small" label="Project Name" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} placeholder="e.g., Website Redesign" />
+                      <TextField fullWidth size="small" type="number" label="Priority (1-5)" value={newPriorityLevel} onChange={(e) => setNewPriorityLevel(Number(e.target.value))} inputProps={{ min: 1, max: 5 }} />
+                      <TextField fullWidth size="small" label="Description" value={newProjectDescription} onChange={(e) => setNewProjectDescription(e.target.value)} multiline rows={2} />
+                      <Box display="flex" gap={1}>
+                        <Button variant="contained" size="small" onClick={handleSubmitAddProject} fullWidth>Create</Button>
+                        <Button variant="outlined" size="small" onClick={() => setShowAddProjectForm(false)} fullWidth>Cancel</Button>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              )}
+
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <ProjectList
+                  projects={projects}
+                  onToggle={handleToggleProject}
+                  onDelete={handleDeleteProject}
+                  onAdd={() => setShowAddProjectForm(true)}
+                  onSelectProject={setSelectedProject}
+                />
+              </Box>
+            </Box>
+          </Box>
+
+          <Box sx={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ p: 4, minHeight: '100%' }}>
+              {showOverdue ? (
+                <Box>
+                  <Box sx={{ mb: 4 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <WarningIcon sx={{ color: '#ef4444', fontSize: 28 }} />
+                      <Typography variant="h4" sx={{ fontWeight: 700, color: '#1f2937' }}>
+                        Overdue Tasks
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                      Tasks that need your immediate attention
+                    </Typography>
+                  </Box>
+
+                  {allTasks.length === 0 ? (
+                    <Card sx={{ p: 4, textAlign: 'center', bgcolor: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                      <Typography variant="body1" sx={{ color: '#059669', fontWeight: 500 }}>
+                        ✓ No overdue tasks! Great work!
+                      </Typography>
+                    </Card>
+                  ) : (
+                    <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {allTasks.map((task) => (
+                        <ListItem key={task.id} disablePadding>
+                          <Card sx={{ width: '100%', bgcolor: '#fef2f2', borderLeft: '4px solid #ef4444' }}>
+                            <CardContent sx={{ '&:last-child': { pb: 2 } }}>
+                              <Box display="flex" justifyContent="space-between" alignItems="start" gap={2}>
+                                <Box flex={1}>
+                                  <Typography variant="caption" sx={{ bgcolor: '#6366f1', color: 'white', px: 1.5, py: 0.25, borderRadius: 1, fontWeight: 600, display: 'inline-block', mb: 1 }}>
+                                    {projects.find(p => p.id === task.project)?.projectName ?? 'Unknown Project'}
+                                  </Typography>
+                                  <Typography variant="h6" sx={{ fontWeight: 700, color: '#1f2937' }}>{task.taskName}</Typography>
+                                  <Typography variant="body2" sx={{ color: '#6b7280', mt: 0.5, mb: 1 }}>{task.taskDescription}</Typography>
+                                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                                    <Typography variant="caption" sx={{ bgcolor: '#fee2e2', color: '#991b1b', px: 1.5, py: 0.5, borderRadius: 1, fontWeight: 500 }}>
+                                      Priority: {task.priorityLevel}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: '#dc2626', fontWeight: 500 }}>
+                                      Due: {new Date(task.timeDue).toLocaleDateString()}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        </ListItem>
+                      ))}
+                    </List>
+                  )}
+                </Box>
+              ) : selectedProject ? (
+                <Box>
+                  <Box sx={{ mb: 4 }}>
+                    <Typography variant="h4" sx={{ fontWeight: 700, color: '#1f2937', mb: 0.5 }}>
+                      {selectedProject.projectName}
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: '#6b7280', mb: 2 }}>
+                      {selectedProject.projectDescription || 'No description'}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                      <Box sx={{ bgcolor: '#f3f4f6', px: 2, py: 1, borderRadius: 1 }}>
+                        <Typography variant="caption" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                          Priority: <span style={{ fontWeight: 700, color: '#1f2937' }}>{selectedProject.priorityLevel}/5</span>
+                        </Typography>
+                      </Box>
+                      <Box sx={{ bgcolor: '#f3f4f6', px: 2, py: 1, borderRadius: 1 }}>
+                        <Typography variant="caption" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                          Tasks: <span style={{ fontWeight: 700, color: '#1f2937' }}>{tasks.length}</span>
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  {showAddTaskForm && (
+                    <Card sx={{ mb: 4, p: 0 }}>
+                      <CardContent sx={{ '&:last-child': { pb: 2 } }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 2, color: '#1f2937' }}>
+                          Create New Task
+                        </Typography>
+                        <Box display="flex" flexDirection="column" gap={1.5}>
+                          <TextField fullWidth size="small" label="Task Name" value={newTaskName} onChange={(e) => setNewTaskName(e.target.value)} placeholder="e.g., Design homepage" />
+                          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                            <TextField size="small" type="number" label="Priority (1-5)" value={newTaskPriorityLevel} onChange={(e) => setNewTaskPriorityLevel(Number(e.target.value))} inputProps={{ min: 1, max: 5 }} />
+                            <TextField size="small" type="datetime-local" label="Due Date" value={newTaskTimeDue} onChange={(e) => setNewTaskTimeDue(e.target.value)} InputLabelProps={{ shrink: true }} />
+                          </Box>
+                          <TextField fullWidth size="small" label="Description" value={newTaskDescription} onChange={(e) => setNewTaskDescription(e.target.value)} multiline rows={2} />
+                          {projectMembers.length > 0 && (
+                            <FormControl fullWidth size="small">
+                              <InputLabel>Assign to Member (optional)</InputLabel>
+                            <Select
+                            value={newTaskAssignee}
+                            label="Assign to Member (optional)"
+                            onChange={e => setNewTaskAssignee(e.target.value as number)}
+                            >
+                            <MenuItem value=''>None</MenuItem>
+                            {projectMembers.map(m => (
+                            <MenuItem key={m.id} value={m.id}>{m.name}</MenuItem>
+                            ))}
+                          </Select>
+                          </FormControl>
+                          )}
+                          
+                          <Box display="flex" gap={1}>
+                            <Button variant="contained" size="small" onClick={handleSubmitAddTask} fullWidth>Create Task</Button>
+                            <Button variant="outlined" size="small" onClick={() => setShowAddTaskForm(false)} fullWidth>Cancel</Button>
+                          </Box>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  <Box>
+                    <TaskList
+                      tasks={tasks}
+                      onToggle={handleToggleTask}
+                      onDelete={handleDeleteTask}
+                      onAdd={() => setShowAddTaskForm(true)}
+                      projectId={selectedProject.id}
+                    />
+                  </Box>
+                  <Box mt={4}>
+                    <MemberPanel
+                      projectId={selectedProject.id}
+                      tasks={tasks}
+                    />
+                  </Box>
+                  </Box>
+              ) : (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
+                  <Card sx={{ p: 4, textAlign: 'center', maxWidth: 400, bgcolor: '#f0f9ff', border: '2px dashed #0284c7' }}>
+                    <ChecklistIcon sx={{ fontSize: 48, color: '#0284c7', mb: 2 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: '#0c4a6e', mb: 1 }}>
+                      Select a Project
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#0c4a6e' }}>
+                      Choose a project from the left sidebar to view and manage its tasks
+                    </Typography>
+                  </Card>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+    </ThemeProvider>
+  );
+}
+
+// ─── Auth flow: login → profile → dashboard 
+
+type Screen = "login" | "register" | "activate" | "profile" | "dashboard";
+
+export default function App(): JSX.Element {
+  const [screen, setScreen] = useState<Screen>("login");
+  const [checking, setChecking] = useState<boolean>(true);
+
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.startsWith("/activate/")) {
+      const parts = path.split("/");
+      const uid = parts[2];
+      const token = parts[3];
+      if (uid && token) {
+        API.post("auth/users/activation/", { uid, token })
+          .then(() => {
+            window.history.replaceState({}, "", "/");
+            setScreen("login");
+          })
+          .catch(() => {
+            window.history.replaceState({}, "", "/");
+            setScreen("login");
+          })
+          .finally(() => setChecking(false));
+        return;
+      }
+    }
+
+    // Normal token check
+    const verifyToken = async () => {
+      const token = localStorage.getItem("access");
+      if (!token) { setScreen("login"); setChecking(false); return; }
+      try {
+        await API.get("auth/users/me/");
+        setScreen("dashboard");
+      } catch {
+        localStorage.removeItem("access");
+        localStorage.removeItem("refresh");
+        localStorage.removeItem("email");
+        setScreen("login");
+      } finally {
+        setChecking(false);
+      }
+    };
+    verifyToken();
+  }, []);
+
+  const handleLogin = (email: string) => {
+    localStorage.setItem("email", email);
+    setScreen("profile");
+  };
+
+  if (checking) return <Spinner />;
+  if (screen === "login") return <LoginPage onLogin={handleLogin} onRegister={() => setScreen("register")} />;
+  if (screen === "register") return <RegisterPage onBackToLogin={() => setScreen("login")} />;
+  if (screen === "profile") return <ProfilePage onComplete={() => setScreen("dashboard")} />;
+  return <Dashboard onProfile={() => setScreen("profile")} />;
+}
+
+function Spinner() {
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f9fafb" }}>
+      <div style={{ width: "28px", height: "28px", border: "3px solid #e5e7eb", borderTop: "3px solid #6366f1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}

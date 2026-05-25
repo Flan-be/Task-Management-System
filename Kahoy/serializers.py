@@ -44,3 +44,10 @@ class TaskSerializer(serializers.ModelSerializer):
             'timeDue', 'overdue', 'taskDescription', 'completed',
             'assignments'
         ]
+
+
+class TaskReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TaskAssignment
+        fields = ["id", "is_completed", "completed_at", "comment", "report_status"]
+        read_only_fields = ["completed_at"]

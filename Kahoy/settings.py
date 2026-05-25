@@ -40,6 +40,8 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '10.0.2.2',
+    '192.168.137.1',
+    '192.168.137.37',
 ]
 
 
@@ -90,7 +92,7 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT', 'Bearer'),  
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=100),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 

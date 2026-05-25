@@ -44,6 +44,15 @@ class TaskAssignment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assigned_tasks')
     assigned_at = models.DateTimeField(auto_now_add=True)
 
+    is_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    comment = models.TextField(blank=True, default="")
+    report_status = models.CharField(
+        max_length=20,
+        choices=[("none", "None"), ("complete", "Complete"), ("incomplete", "Incomplete")],
+        default="none"
+    )
+
     class Meta:
         unique_together = ('task', 'user')
 

@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/frontend/node_modules
+__pycache__/
 /.pnp
 .pnp.js
 
@@ -25,3 +27,7 @@ yarn-error.log*
 
 .env
 *.env
+venv/
+
+*.pyc
+db.sqlite3

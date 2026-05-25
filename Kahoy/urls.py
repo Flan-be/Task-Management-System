@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from app.views import UpdateProfileImageView
-from .views import MemberListView, TaskAssignmentListView, TaskAssignmentDetailView
+from .views import MemberListView, TaskAssignmentListView, TaskAssignmentDetailView, TaskReportView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -28,5 +28,6 @@ urlpatterns = [
     path('members/', MemberListView.as_view()),
     path('tasks/<int:task_id>/assignments/', TaskAssignmentListView.as_view()),
     path('tasks/<int:task_id>/assignments/<int:pk>/', TaskAssignmentDetailView.as_view()),
+    path("api/assignments/<int:pk>/report/", TaskReportView.as_view()),
 ]
 

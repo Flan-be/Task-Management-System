@@ -44,7 +44,8 @@ class TaskAssignmentSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'task', 'task_name', 'task_description',
             'task_due', 'task_priority', 'task_overdue',
-            'task_completed', 'project_name', 'assigned_at'
+            'task_completed', 'project_name', 'assigned_at',
+            'is_completed', 'report_status', 'comment',
         ]
 
 
@@ -107,6 +108,9 @@ class ProjectMemberSerializer(serializers.ModelSerializer):
                 'task_name': a.task.taskName,
                 'completed': a.task.completed,
                 'overdue': a.task.overdue,
+                'is_completed': a.is_completed,       
+                'report_status': a.report_status,     
+                'comment': a.comment, 
             }
             for a in assignments
         ]

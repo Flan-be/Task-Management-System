@@ -15,6 +15,7 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 from decouple import config
+import sqlitecloud
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -152,10 +153,12 @@ AUTH_USER_MODEL = 'kahoy_app.User'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django_sqlitecloud',
-        'NAME': os.environ.get('SQLITECLOU_URL'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': config('SQLITECLOUD_URL'),
     }
 }
+
+SQLITECLOUD_URL = config('SQLITECLOUD_URL')
 
 
 # Password validation

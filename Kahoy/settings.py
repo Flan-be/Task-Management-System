@@ -164,7 +164,7 @@ else:
     }
 
 
-SQLITECLOUD_URL = config('SQLITECLOUD_URL')
+SQLITECLOUD_URL = config('SQLITECLOUD_URL', default=None)
 
 
 # Password validation

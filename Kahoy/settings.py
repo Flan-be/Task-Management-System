@@ -15,7 +15,7 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 from decouple import config
-import sqlitecloud
+import dj_database_url
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -41,8 +41,6 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS').split(',')
 STATIC_ROOT = os.path.join(BASE_DIR / 'staticfiles')
 STATIC_URL = '/static/'
-
-
 
 
 # Application definition
@@ -149,11 +147,17 @@ AUTH_USER_MODEL = 'kahoy_app.User'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+
+
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.sqlite3',
+#        'NAME': config('SQLITECLOUD_URL'),
+#    }
+#} 
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': config('SQLITECLOUD_URL'),
-    }
+    'default': dj_database_url.config(default=config('DATABASE_URL'))
 }
 
 SQLITECLOUD_URL = config('SQLITECLOUD_URL')

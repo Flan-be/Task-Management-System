@@ -2,7 +2,7 @@ services:
   - type: web
     name: taskflow-backend
     runtime: python
-    buildCommand: "pip install -r requirements.txt && python manage.py check && python manage.py migrate"
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate"
     startCommand: "gunicorn Kahoy.wsgi:application"
     envVars:
       - key: SQLITECLOUD_URL

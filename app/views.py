@@ -6,11 +6,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
-from .models import Project, Task
+from .models import Project, ReportMessage, Task, Report
 from .serializers import (
     ProjectSerializer, TaskSerializer,
     MemberSerializer, TaskAssignmentSerializer,
-    ProjectMemberCreateSerializer, ProjectMemberSerializer
+    ProjectMemberCreateSerializer, ProjectMemberSerializer,
+    ReportSerializer
 )
 from Kahoy.models import User, TaskAssignment, ProjectMember
 from Kahoy.serializers import CurrentUserSerializer
@@ -156,3 +157,118 @@ class AssignTaskToMemberView(APIView):
         user_id = request.data.get('user')
         TaskAssignment.objects.filter(task_id=task_id, user_id=user_id).delete()
         return Response(status=204)
+    
+
+class ReportViewSet(viewsets.ModelViewSet):
+    queryset = Report.objects.all().order_by('-created_at')
+    serializer_class = ReportSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['task', 'status']
+
+    def perform_create(self, serializer):
+        existing = Report.objects.filter(
+            task=serializer.validated_data['task'],
+            submitted_by=self.request.user
+    ).first()
+    
+        comment = serializer.validated_data.get('comment', '')
+        print("=== PERFORM CREATE ===")
+        print("existing:", existing)
+        print("comment:", comment)
+        print("user:", self.request.user)
+    
+        if existing:
+            existing.status = serializer.validated_data.get('status', existing.status)
+            existing.comment = comment
+            existing.save()
+            print("updating existing report")
+            if comment:
+                msg = ReportMessage.objects.create(
+                    report=existing,
+                    sender=self.request.user,
+                    sender_role='member',
+                    message=comment
+                )
+                print("message created:", msg.id)
+        else:
+            report = serializer.save(submitted_by=self.request.user)
+            print("created new report:", report.id)
+            if comment:
+                msg = ReportMessage.objects.create(
+                    report=report,
+                    sender=self.request.user,
+                    sender_role='member',
+                    message=comment
+                )
+                print("message created:", msg.id)
+
+    @action(detail=True, methods=['post'], url_path='reply')
+    def reply(self, request, pk=None):
+        report = self.get_object()
+        message = request.data.get('message', '').strip()
+        if not message:
+            return Response({'error': 'Message is required.'}, status=400)
+
+        # determine sender role from user
+        sender_role = 'manager' if request.user.is_staff else 'member'
+
+        ReportMessage.objects.create(
+            report=report,
+            sender=request.user,
+            sender_role=sender_role,
+            message=message,
+        )
+
+        # update reviewed_by if manager
+        if sender_role == 'manager':
+            report.reviewed_by = request.user
+            report.reviewed_at = timezone.now()
+            report.save()
+
+        return Response(ReportSerializer(report).data)
+
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        status = request.data.get('status')
+        comment = request.data.get('comment')
+        feedback = request.data.get('feedback')
+        message = request.data.get('message')
+
+        if status:
+            instance.status = status
+        if comment:
+            instance.comment = comment
+            # create member message
+            ReportMessage.objects.create(
+                report=instance,
+                sender=request.user,
+                sender_role='member',
+                message=comment
+            )
+        if feedback:
+            instance.feedback = feedback
+            instance.reviewed_by = request.user
+            instance.reviewed_at = timezone.now()
+            # create manager message
+            ReportMessage.objects.create(
+                report=instance,
+                sender=request.user,
+                sender_role='manager',
+                message=feedback
+            )
+        if message:
+            sender_role = 'manager' if request.user.is_staff else 'member'
+            ReportMessage.objects.create(
+                report=instance,
+                sender=request.user,
+                sender_role=sender_role,
+                message=message
+            )
+            if request.user.is_staff:
+                instance.reviewed_by = request.user
+                instance.reviewed_at = timezone.now()
+
+        instance.save()
+        return Response(ReportSerializer(instance).data)

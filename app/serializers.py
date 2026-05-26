@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project, Task
+from .models import Project, Task, Report, ReportMessage
 from Kahoy.models import User, TaskAssignment, ProjectMember
 import secrets
 import string
@@ -38,6 +38,9 @@ class TaskAssignmentSerializer(serializers.ModelSerializer):
     task_overdue = serializers.BooleanField(source='task.overdue', read_only=True)
     task_completed = serializers.BooleanField(source='task.completed', read_only=True)
     project_name = serializers.CharField(source='task.project.projectName', read_only=True)
+    user_id = serializers.IntegerField(source='user.id', read_only=True)      
+    user_name = serializers.CharField(source='user.name', read_only=True)    
+
 
     class Meta:
         model = TaskAssignment
@@ -45,7 +48,7 @@ class TaskAssignmentSerializer(serializers.ModelSerializer):
             'id', 'task', 'task_name', 'task_description',
             'task_due', 'task_priority', 'task_overdue',
             'task_completed', 'project_name', 'assigned_at',
-            'is_completed', 'report_status', 'comment',
+            'is_completed', 'report_status', 'comment', 'user_name', 'user_id',
         ]
 
 
@@ -114,3 +117,31 @@ class ProjectMemberSerializer(serializers.ModelSerializer):
             }
             for a in assignments
         ]
+    
+
+from .models import Project, Task, Report
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class ReportMessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.CharField(source='sender.name', read_only=True)
+
+    class Meta:
+        model = ReportMessage
+        fields = ['id', 'sender_name', 'sender_role', 'message', 'created_at']
+
+class ReportSerializer(serializers.ModelSerializer):
+    submitted_by_name = serializers.CharField(source='submitted_by.name', read_only=True)
+    reviewed_by_name = serializers.CharField(source='reviewed_by.name', read_only=True)
+    task_name = serializers.CharField(source='task.taskName', read_only=True)
+    messages = ReportMessageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Report
+        fields = [
+            'id', 'task', 'task_name', 'submitted_by', 'submitted_by_name',
+            'status', 'comment', 'feedback', 'reviewed_by', 'reviewed_by_name',
+            'created_at', 'reviewed_at', 'messages',
+        ]
+        read_only_fields = ['submitted_by', 'reviewed_by', 'reviewed_at']

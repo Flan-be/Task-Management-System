@@ -23,7 +23,9 @@ type Member = {
 type Assignee = {
     id: number;
     user: number;
+    user_id: number;
     task_name: string;
+    user_name: string;
 };
 
 interface TaskListProps {
@@ -80,12 +82,12 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd, p
 
     const getUnassignedMembers = (taskId: number) => {
         const assignees = taskAssignees[taskId] || [];
-        const assignedIds = assignees.map(a => a.user);
+        const assignedIds = assignees.map(a => a.user_id);
         return members.filter(m => !assignedIds.includes(m.id));
     };
 
-    const getMemberName = (userId: number) =>
-        members.find(m => m.id === userId)?.name || 'Unknown';
+    const getMemberName = (user_id: number) =>
+        members.find(m => m.id === user_id)?.name || 'Unknown';
 
     const getFilteredTasks = () => {
         const now = new Date();
@@ -186,10 +188,10 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd, p
                                                 {(taskAssignees[task.id] || []).map(a => (
                                                     <Chip
                                                         key={a.id}
-                                                        label={getMemberName(a.user)}
+                                                        label={a.user_name || "unknown"}
                                                         size="small"
                                                         color="primary"
-                                                        onDelete={() => handleUnassign(task.id, a.user)}
+                                                        onDelete={() => handleUnassign(task.id, a.user_id)}
                                                     />
                                                 ))}
                                                 {(taskAssignees[task.id] || []).length === 0 && (
@@ -283,8 +285,8 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggle, onDelete, onAdd, p
                                             {(taskAssignees[task.id] || []).map(a => (
                                                 <Chip
                                                     key={a.id}
-                                                    avatar={<Avatar sx={{ width: 20, height: 20, fontSize: '0.6rem' }}>{getMemberName(a.user)[0]}</Avatar>}
-                                                    label={getMemberName(a.user)}
+                                                    avatar={<Avatar sx={{ width: 20, height: 20, fontSize: '0.6rem' }}>{a.user_name?.[0] || '?'}</Avatar>}
+                                                    label={a.user_name || "unknown"}
                                                     size="small"
                                                     variant="outlined"
                                                     color="primary"

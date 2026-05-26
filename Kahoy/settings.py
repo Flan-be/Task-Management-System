@@ -14,12 +14,13 @@ import os
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
-
-load_dotenv()
+from decouple import config
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
+
 
 # Cloudinary configuration
 import cloudinary
@@ -31,18 +32,13 @@ import cloudinary.api
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-wd#z!=9764@x)+u^ks001kh*_k%+-nwaek)b3iu9s%#n#tw$e^'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '10.0.2.2',
-    '192.168.137.1',
-    '192.168.137.37',
-]
+ALLOWED_HOSTS = config('ALLOWED_HOSTS').split(',')
+
 
 
 # Application definition

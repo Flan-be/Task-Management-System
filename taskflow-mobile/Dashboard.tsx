@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import API from "./api";
 import { deleteToken } from "./storage";
+import ReportScreen from "./ReportScreen";
 
 type Task = {
   id: number;
@@ -35,6 +36,7 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
   const [refreshing, setRefreshing] = useState(false);
   const [sortKey, setSortKey]     = useState<SortKey>("due_asc");
   const [sortModalVisible, setSortModalVisible] = useState(false);
+  const [reportTask, setReportTask] = useState<{ id: number; name: string } | null>(null);
 
   const fetchData = async () => {
     try {
@@ -192,16 +194,16 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
                 </Text>
               ) : null}
 
-              {!item.task_completed ? (
-                <TouchableOpacity
-                  style={styles.completeBtn}
-                  onPress={() => handleComplete(item.id)}
-                >
-                  <Text style={styles.completeBtnText}>Mark Complete ✓</Text>
-                </TouchableOpacity>
-              ) : (
-                <Text style={styles.completedLabel}>✅ Completed</Text>
+              {!item.task_completed && (
+                  <Text style={styles.incompleteLabel}>❌ Incomplete</Text>
               )}
+
+              <TouchableOpacity
+                style={styles.reportBtn}
+                onPress={() => setReportTask({ id: item.id, name: item.task_name })}
+                >
+                  <Text style={styles.reportBtnText}>📋 Submit Report</Text>
+                </TouchableOpacity>
             </View>
           );
         }}
@@ -232,6 +234,20 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
           </View>
         </Pressable>
       </Modal>
+
+      {reportTask && (
+      <Modal visible animationType="slide">
+        <ReportScreen
+          taskId={reportTask.id}
+          taskName={reportTask.name}
+          onClose={() => setReportTask(null)}
+          onSubmitted={() => {
+            setReportTask(null);
+            fetchData();
+          }}
+        />
+      </Modal>
+    )}
     </View>
   );
 }
@@ -318,4 +334,12 @@ const styles = StyleSheet.create({
   modalOptionText:       { fontSize: 15, color: "#374151" },
   modalOptionTextActive: { color: "#6366f1", fontWeight: "600" },
   checkmark:             { fontSize: 16, color: "#6366f1" },
+
+  reportBtn: {
+  marginTop: 8, borderRadius: 8, paddingVertical: 8,
+  alignItems: "center", borderWidth: 1, borderColor: "#6366f1",
+ },
+  reportBtnText: { color: "#6366f1", fontWeight: "600", fontSize: 13 },
+
+  incompleteLabel:  { color: "#ec1818", fontWeight: "bold", fontSize: 13, textAlign: "center" },
 });

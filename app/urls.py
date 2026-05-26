@@ -4,7 +4,8 @@ from rest_framework_nested import routers
 from .views import (
     ProjectViewSet, TaskViewSet,
     MemberViewSet, TaskAssignmentViewSet,
-    ProjectMemberViewSet, AssignTaskToMemberView
+    ProjectMemberViewSet, AssignTaskToMemberView,
+    ReportViewSet
 )
 
 router = DefaultRouter()
@@ -12,6 +13,7 @@ router.register(r'projects', ProjectViewSet)
 router.register(r'tasks', TaskViewSet)
 router.register(r'members', MemberViewSet, basename='member')
 router.register(r'assignments', TaskAssignmentViewSet, basename='assignment')
+router.register(r'reports', ReportViewSet)
 
 # Nested router: /projects/{project_pk}/members/
 projects_router = routers.NestedDefaultRouter(router, r'projects', lookup='project')

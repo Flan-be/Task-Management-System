@@ -14,7 +14,7 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import WarningIcon from '@mui/icons-material/Warning';
 import API from "./API.tsx";
 import MemberPanel from './MemberPanel.tsx';
-
+import ReportList from './ReportList.tsx';
 
 
 function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
@@ -35,6 +35,17 @@ function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [newTaskAssignee, setNewTaskAssignee] = useState<number | ''>('');
   const [projectMembers, setProjectMembers] = useState<{id: number, name: string}[]>([]);
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+
+  const filteredTasks = tasks.filter(task => {
+  if (!task.timeDue) return true;
+  const due = new Date(task.timeDue);
+  if (dateFrom && due < new Date(dateFrom)) return false;
+  if (dateTo && due > new Date(dateTo + "T23:59:59")) return false;
+  return true;
+  });
+
 
   useEffect(() => {
     API.get("auth/users/me/")
@@ -42,7 +53,7 @@ function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
       .catch(() => {});
   }, []);
   useEffect(() => { fetchProjects(); }, []);
-  useEffect(() => { if (selectedProject) fetchTasks(selectedProject.id); }, [selectedProject]);
+  useEffect(() => { if (selectedProject) fetchTasks(selectedProject.id); setDateFrom(""); setDateTo("");}, [selectedProject]);
   useEffect(() => {
   if (selectedProject) {
     API.get(`projects/${selectedProject.id}/members/`)
@@ -82,6 +93,8 @@ function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
 
   const handleSubmitAddTask = async () => {
   if (!selectedProject) return;
+
+
   const newTask = await createTask({
     taskName: newTaskName,
     priorityLevel: newTaskPriorityLevel,
@@ -317,22 +330,72 @@ function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
                     </Card>
                   )}
 
-                  <Box>
-                    <TaskList
-                      tasks={tasks}
-                      onToggle={handleToggleTask}
-                      onDelete={handleDeleteTask}
-                      onAdd={() => setShowAddTaskForm(true)}
-                      projectId={selectedProject.id}
+                <Box>
+                  {/* Date range filter bar */}
+                  <Box sx={{
+                    display: 'flex', alignItems: 'center', gap: 2,
+                    mb: 3, p: 2, bgcolor: '#fff',
+                    borderRadius: 2, border: '1px solid #e5e7eb'
+                  }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>
+                      Filter by due date
+                    </Typography>
+                    <TextField
+                      size="small"
+                      type="date"
+                      label="From"
+                      value={dateFrom}
+                      onChange={e => setDateFrom(e.target.value)}
+                      InputLabelProps={{ shrink: true }}
+                      sx={{ width: 160 }}
                     />
-                  </Box>
-                  <Box mt={4}>
-                    <MemberPanel
-                      projectId={selectedProject.id}
-                      tasks={tasks}
+                    <Typography variant="caption" sx={{ color: '#9ca3af' }}>to</Typography>
+                    <TextField
+                      size="small"
+                      type="date"
+                      label="To"
+                      value={dateTo}
+                      onChange={e => setDateTo(e.target.value)}
+                      InputLabelProps={{ shrink: true }}
+                      sx={{ width: 160 }}
                     />
+                    {(dateFrom || dateTo) && (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => { setDateFrom(""); setDateTo(""); }}
+                        sx={{ whiteSpace: 'nowrap' }}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                    <Typography variant="caption" sx={{ color: '#6b7280', ml: 'auto' }}>
+                      {filteredTasks.length} of {tasks.length} tasks
+                    </Typography>
                   </Box>
-                  </Box>
+
+                  <TaskList
+                    tasks={filteredTasks}
+                    onToggle={handleToggleTask}
+                    onDelete={handleDeleteTask}
+                    onAdd={() => setShowAddTaskForm(true)}
+                    projectId={selectedProject.id}
+                  />
+                </Box>
+
+                <Box sx={{ mt: 4 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937', mb: 2 }}>
+                    Task Reports
+                  </Typography>
+                  <ReportList projectId={selectedProject.id} tasks={tasks} />
+                </Box>
+                <Box mt={4}>
+                  <MemberPanel
+                    projectId={selectedProject.id}
+                    tasks={tasks}
+                  />
+                </Box>
+                </Box>
               ) : (
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
                   <Card sx={{ p: 4, textAlign: 'center', maxWidth: 400, bgcolor: '#f0f9ff', border: '2px dashed #0284c7' }}>

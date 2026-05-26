@@ -38,6 +38,9 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS').split(',')
+STATIC_ROOT = os.path.join(BASE_DIR / 'staticfiles')
+STATIC_URL = '/static/'
+
 
 
 
@@ -71,7 +74,9 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware'
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = [
+    "https://your-frontend.onrender.com",
+]
 
 ROOT_URLCONF = 'Kahoy.urls'
 

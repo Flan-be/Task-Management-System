@@ -419,7 +419,6 @@ function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
   );
 }
 
-console.log("API URL:", import.meta.env.VITE_API_URL);
 
 // ─── Auth flow: login → profile → dashboard 
 

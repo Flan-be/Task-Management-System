@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from app.views import UpdateProfileImageView
+from app.views import KnowledgeBaseView, UpdateProfileImageView, ChatbotView
 from .views import MemberListView, TaskAssignmentListView, TaskAssignmentDetailView, TaskReportView
 
 urlpatterns = [
@@ -29,5 +29,7 @@ urlpatterns = [
     path('tasks/<int:task_id>/assignments/', TaskAssignmentListView.as_view()),
     path('tasks/<int:task_id>/assignments/<int:pk>/', TaskAssignmentDetailView.as_view()),
     path("api/assignments/<int:pk>/report/", TaskReportView.as_view()),
+    path('chat/', ChatbotView.as_view()),
+    path('knowledge/', KnowledgeBaseView.as_view()),
 ]
 

@@ -5,7 +5,7 @@ from .views import (
     ProjectViewSet, TaskViewSet,
     MemberViewSet, TaskAssignmentViewSet,
     ProjectMemberViewSet, AssignTaskToMemberView,
-    ReportViewSet
+    ReportViewSet, ChatbotView, KnowledgeBaseView
 )
 
 router = DefaultRouter()
@@ -23,4 +23,6 @@ urlpatterns = [
     path('', include(router.urls)),
     path('', include(projects_router.urls)),
     path('projects/<int:project_pk>/assign-task/', AssignTaskToMemberView.as_view()),
+    path('chat/', ChatbotView.as_view()),
+    path('knowledge/', KnowledgeBaseView.as_view()),
 ]

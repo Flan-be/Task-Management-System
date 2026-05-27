@@ -23,13 +23,18 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
       localStorage.setItem("refresh", data.refresh);
       onLogin(email);
     } catch (err: any) {
-      const message = err.response?.data?.detail;
-      setError(message || "Invalid credentials. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+      console.log('Full error:', JSON.stringify(err.response?.data));
+      const data = err.response?.data;
+      const msg =
+        data?.email?.[0] ||
+        data?.name?.[0]  ||
+        data?.username?.[0] ||
+        data?.password?.[0] ||
+        data?.non_field_errors?.[0] ||
+        data?.detail ||
+        "Registration failed.";
+      setError(msg);
+    }};
   return (
     <div style={styles.root}>
       <div style={styles.grid} aria-hidden="true" />

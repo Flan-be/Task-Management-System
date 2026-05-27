@@ -38,7 +38,15 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
+#ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
+
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '10.0.2.2',
+    'task-management-system-hvnb.onrender.com',
+]
+
 STATIC_ROOT = os.path.join(BASE_DIR / 'staticfiles')
 STATIC_URL = '/static/'
 
@@ -74,7 +82,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'Kahoy.urls'
 

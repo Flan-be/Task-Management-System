@@ -15,6 +15,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import API from "./API.tsx";
 import MemberPanel from './MemberPanel.tsx';
 import ReportList from './ReportList.tsx';
+import Chatbot from './ChatBot.tsx';
 
 
 function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
@@ -409,6 +410,7 @@ function Dashboard({ onProfile }: { onProfile: () => void }): JSX.Element {
                   </Card>
                 </Box>
               )}
+              <Chatbot />  {/* add here, outside Router */}
             </Box>
           </Box>
         </Box>

@@ -1,8 +1,10 @@
 from rest_framework import serializers
-from .models import Project, Task, Report, ReportMessage
+from .models import Project, Task, Report, ReportMessage, KnowledgeBase, ChatMessage
 from Kahoy.models import User, TaskAssignment, ProjectMember
 import secrets
 import string
+from django.contrib.auth import get_user_model
+
 
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,7 +50,8 @@ class TaskAssignmentSerializer(serializers.ModelSerializer):
             'id', 'task', 'task_name', 'task_description',
             'task_due', 'task_priority', 'task_overdue',
             'task_completed', 'project_name', 'assigned_at',
-            'is_completed', 'report_status', 'comment', 'user_name', 'user_id',
+            'is_completed', 'report_status', 'comment', 'user_name', 
+            'user_id',
         ]
 
 
@@ -119,8 +122,6 @@ class ProjectMemberSerializer(serializers.ModelSerializer):
         ]
     
 
-from .models import Project, Task, Report
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
@@ -145,3 +146,14 @@ class ReportSerializer(serializers.ModelSerializer):
             'created_at', 'reviewed_at', 'messages',
         ]
         read_only_fields = ['submitted_by', 'reviewed_by', 'reviewed_at']
+
+
+class KnowledgeBaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = KnowledgeBase
+        fields = '__all__'
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatMessage
+        fields = '__all__'

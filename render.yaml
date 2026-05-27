@@ -2,6 +2,7 @@ services:
   - type: web
     name: taskflow-backend
     runtime: python
+    pythonVersion: "3.12.9"
     buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate"
     startCommand: "gunicorn Kahoy.wsgi:application"
     envVars:

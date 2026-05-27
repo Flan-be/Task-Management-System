@@ -2,7 +2,7 @@ import axios from "axios";
 
 console.log("API URL:", import.meta.env.VITE_API_URL);
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000/api/";
+const BASE_URL = "https://task-management-system-hvnb.onrender.com/api/";
 
 const API = axios.create({
   baseURL: BASE_URL,

@@ -32,6 +32,5 @@ urlpatterns = [
     path("api/assignments/<int:pk>/report/", TaskReportView.as_view()),
     path('chat/', ChatbotView.as_view()),
     path('knowledge/', KnowledgeBaseView.as_view()),
-    path('debug-email/', debug_email),
 ]
 

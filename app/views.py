@@ -323,7 +323,10 @@ User:
                     "prompt": prompt,
                     "stream": False
                 },
-                headers={"ngrok-skip-browser-warning": "true"},
+                headers={"ngrok-skip-browser-warning": "true",
+                         "Content-Type": "application/json"
+                         },
+
                 timeout=30
             )
             print("Ollama status:", response.status_code)

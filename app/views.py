@@ -329,8 +329,9 @@ class ChatbotView(ListCreateAPIView):
                 },
                 headers={
                     "ngrok-skip-browser-warning": "true",
+                    "CF-Access-Client-Id": "bypass",
                     "Content-Type": "application/json",
-                    "User-Agent": "python-requests/2.28.0"
+                    "User-Agent": "curl/7.68.0"
                 },
                 timeout=30
             )

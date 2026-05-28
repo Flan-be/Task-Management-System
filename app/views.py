@@ -324,7 +324,8 @@ User:
                     "stream": False
                 },
                 headers={"ngrok-skip-browser-warning": "true",
-                         "Content-Type": "application/json"
+                         "Content-Type": "application/json",
+                         "User-Agent": "python-requests/2.28.0"
                          },
 
                 timeout=30

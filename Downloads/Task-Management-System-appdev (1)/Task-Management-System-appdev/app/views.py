@@ -1,5 +1,3 @@
-from urllib import response
-
 from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone

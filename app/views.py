@@ -311,14 +311,15 @@ class ChatbotView(ListCreateAPIView):
 
         prompt = f"""You are a helpful assistant for TaskFlow, a task management system.
 
-Knowledge:
-{context}
+    Knowledge:
+    {context}
 
-User:
-{user_message}
-"""
+    User:
+    {user_message}
+    """
         try:
             ollama_url = config('OLLAMA_URL', default='http://localhost:11434')
+            print("🔗 Using OLLAMA_URL:", ollama_url)  # moved here
             response = requests.post(
                 f"{ollama_url}/api/generate",
                 json={
@@ -326,14 +327,15 @@ User:
                     "prompt": prompt,
                     "stream": False
                 },
-                headers={"ngrok-skip-browser-warning": "true",
-                         "Content-Type": "application/json",
-                         "User-Agent": "python-requests/2.28.0"
-                         },
+                headers={
+                    "ngrok-skip-browser-warning": "true",
+                    "Content-Type": "application/json",
+                    "User-Agent": "python-requests/2.28.0"
+                },
                 timeout=30
             )
             print("Ollama status:", response.status_code)
-            print("Ollama response:", response.text)
+            print("Ollama response:", response.text[:200])
             ai_response = response.json()["response"]
         except Exception as e:
             print("Ollama error:", str(e))

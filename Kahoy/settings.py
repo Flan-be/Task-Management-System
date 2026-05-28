@@ -110,14 +110,17 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 
+DEFAULT_FROM_EMAIL = 'cahoy.francisnino@gmail.com'
 EMAIL_BACKEND = 'Kahoy.brevo_backend.BrevoEmailBackend'
 EMAIL_HOST = 'smtp-relay.brevo.com'
-EMAIL_PORT = 465
+EMAIL_PORT = 587
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 BREVO_API_KEY = os.environ.get('BREVO_API_KEY')
+
+
 
 DJOSER = {
     'SEND_ACTIVATION_EMAIL': True,

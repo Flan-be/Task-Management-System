@@ -1,6 +1,9 @@
 import requests
 from django.core.mail.backends.base import BaseEmailBackend
 from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 class BrevoEmailBackend(BaseEmailBackend):
     def send_messages(self, email_messages):
@@ -20,9 +23,11 @@ class BrevoEmailBackend(BaseEmailBackend):
                         'htmlContent': message.body,
                     }
                 )
+                logger.warning(f"Brevo response: {response.status_code} {response.text}")
                 if response.status_code == 201:
                     sent += 1
             except Exception as e:
+                logger.error(f"Brevo error: {e}")
                 if not self.fail_silently:
                     raise
         return sent

@@ -1,5 +1,3 @@
-from urllib import response
-
 from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
@@ -21,6 +19,7 @@ import requests
 from decouple import config
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.permissions import IsAuthenticated
+from groq import Groq
 
 
 
@@ -287,21 +286,16 @@ class KnowledgeBaseView(ListCreateAPIView):
     serializer_class = KnowledgeBaseSerializer
     permission_classes = [IsAuthenticated]
 
-
 class ChatbotView(ListCreateAPIView):
     queryset = ChatMessage.objects.all()
     serializer_class = ChatMessageSerializer
     permission_classes = [IsAuthenticated]
-    ollama_url = config('OLLAMA_URL', default='http://localhost:11434')
-
-    print("🔗 Using OLLAMA_URL:", ollama_url)
 
     def create(self, request, *args, **kwargs):
         user_message = request.data.get("message")
 
         user_chat = ChatMessage.objects.create(
-            role='user',
-            message=user_message
+            role='user', message=user_message
         )
 
         context = ""
@@ -309,42 +303,22 @@ class ChatbotView(ListCreateAPIView):
             if item.text_content:
                 context += item.text_content + "\n"
 
-        prompt = f"""You are a helpful assistant for TaskFlow, a task management system.
-
-    Knowledge:
-    {context}
-
-    User:
-    {user_message}
-    """
         try:
-            ollama_url = config('OLLAMA_URL', default='http://localhost:11434')
-            print("🔗 Using OLLAMA_URL:", ollama_url)  # moved here
-            response = requests.post(
-                f"{ollama_url}/api/generate",
-                json={
-                    "model": "qwen2.5:0.5b",
-                    "prompt": prompt,
-                    "stream": False
-                },
-                headers={
-                    "ngrok-skip-browser-warning": "true",
-                    "CF-Access-Client-Id": "bypass",
-                    "Content-Type": "application/json",
-                    "User-Agent": "curl/7.68.0"
-                },
-                timeout=30
+            client = Groq(api_key=config('GROQ_API_KEY'))
+            completion = client.chat.completions.create(
+                model="llama3-8b-8192",
+                messages=[
+                    {"role": "system", "content": f"You are a helpful assistant for TaskFlow, a task management system.\n\nKnowledge:\n{context}"},
+                    {"role": "user", "content": user_message}
+                ]
             )
-            print("Ollama status:", response.status_code)
-            print("Ollama response:", response.text[:200])
-            ai_response = response.json()["response"]
+            ai_response = completion.choices[0].message.content
         except Exception as e:
-            print("Ollama error:", str(e))
+            print("Groq error:", str(e))
             ai_response = "AI is currently unavailable. Please try again later."
 
         ai_chat = ChatMessage.objects.create(
-            role='assistant',
-            message=ai_response
+            role='assistant', message=ai_response
         )
 
         return Response({

@@ -18,15 +18,6 @@ from django.contrib import admin
 from django.urls import path, include
 from app.views import KnowledgeBaseView, UpdateProfileImageView, ChatbotView
 from .views import MemberListView, TaskAssignmentListView, TaskAssignmentDetailView, TaskReportView
-from django.http import JsonResponse
-
-def debug_email(request):
-    import os
-    return JsonResponse({
-        'EMAIL_HOST_USER': os.environ.get('EMAIL_HOST_USER'),
-        'EMAIL_HOST': os.environ.get('EMAIL_HOST'),
-        'EMAIL_HOST_PASSWORD': os.environ.get('EMAIL_HOST_PASSWORD', 'NOT SET'),
-    })
 
 
 urlpatterns = [

@@ -17,7 +17,7 @@ export default function App() {
     if (token) {
       try {
         await API.get("auth/users/me/", {
-          headers: { Authorization: `JWT ${token}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
         setScreen("dashboard");
       } catch {

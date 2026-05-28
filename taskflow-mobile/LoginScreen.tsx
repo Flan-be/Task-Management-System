@@ -23,10 +23,10 @@ export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
     // 2. Use API instance with explicit header
     const userRes = await API.get("auth/users/me/", {
-      headers: { Authorization: `JWT ${token}` },  // ✅ explicit, no interceptor needed
+      headers: { Authorization: `Bearer ${token}` },  // ✅ explicit, no interceptor needed
     });
     console.log("✅ User data:", JSON.stringify(userRes.data));
-    console.log("🔑 Sending header:", `JWT ${token}`);
+    console.log("🔑 Sending header:", `Bearer ${token}`);
 
     // 3. Remove role check for now — just let any user in
     await saveToken(token);

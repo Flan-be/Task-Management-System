@@ -1,7 +1,5 @@
 import axios from "axios";
 
-console.log("API URL:", import.meta.env.VITE_API_URL);
-
 const BASE_URL = "https://task-management-system-hvnb.onrender.com/api/";
 
 const API = axios.create({

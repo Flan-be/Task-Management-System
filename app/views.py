@@ -306,7 +306,7 @@ class ChatbotView(ListCreateAPIView):
         try:
             client = Groq(api_key=config('GROQ_API_KEY'))
             completion = client.chat.completions.create(
-                model="llama3-8b-8192",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": f"You are a helpful assistant for TaskFlow, a task management system.\n\nKnowledge:\n{context}"},
                     {"role": "user", "content": user_message}

@@ -292,6 +292,9 @@ class ChatbotView(ListCreateAPIView):
     queryset = ChatMessage.objects.all()
     serializer_class = ChatMessageSerializer
     permission_classes = [IsAuthenticated]
+    ollama_url = config('OLLAMA_URL', default='http://localhost:11434')
+
+    print("🔗 Using OLLAMA_URL:", ollama_url)
 
     def create(self, request, *args, **kwargs):
         user_message = request.data.get("message")
@@ -327,7 +330,6 @@ User:
                          "Content-Type": "application/json",
                          "User-Agent": "python-requests/2.28.0"
                          },
-
                 timeout=30
             )
             print("Ollama status:", response.status_code)

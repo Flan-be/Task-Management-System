@@ -32,6 +32,11 @@ import cloudinary.api
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
+import logging
+logger = logging.getLogger(__name__)
+logger.warning(f"EMAIL_HOST_USER: {os.environ.get('EMAIL_HOST_USER')}")
+logger.warning(f"EMAIL_HOST: {os.environ.get('EMAIL_HOST', 'smtp-relay.brevo.com')}")
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
 

@@ -324,4 +324,5 @@ class ChatbotView(ListCreateAPIView):
         return Response({
             "user": ChatMessageSerializer(user_chat).data,
             "assistant": ChatMessageSerializer(ai_chat).data
-        })
+        })#   g r o q  
+ 
